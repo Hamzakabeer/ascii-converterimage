@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Darkened ASCII Art</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+        #asciiArt {
+            white-space: pre;
+            font-size: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image to Darkened ASCII Art</h1>
+    <input type="file" id="imageInput" />
+    <canvas id="canvas" style="display:none;"></canvas>
+    <pre id="asciiArt"></pre>
+
+    <script>
+        const asciiChars = "@#S%?*+;:,. "; // ASCII characters for conversion
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        document.getElementById("imageInput").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Resize image width to 100px (you can adjust this value)
+                        const scaleFactor = 0.5; // Scale down the width by 50%
+                        const newWidth = img.width * scaleFactor;
+                        const newHeight = img.height * scaleFactor;
+
+                        // Set canvas dimensions to scaled image size
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+
+                        // Draw the scaled image
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        generateDarkenedASCIIArt();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function generateDarkenedASCIIArt() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            let asciiArt = "";
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                let gray = (r + g + b) / 3;
+
+                // Darken the image by increasing contrast
+                gray = Math.max(gray - 30, 0);  // Decrease brightness slightly to darken it
+
+                const charIndex = Math.floor((gray / 255) * (asciiChars.length - 1));
+                asciiArt += asciiChars[charIndex];
+
+                // Newline every width to form a grid
+                if ((i / 4 + 1) % canvas.width === 0) {
+                    asciiArt += "\n";
+                }
+            }
+
+            document.getElementById("asciiArt").textContent = asciiArt;
+        }
+    </script>
+</body>
+</html>
